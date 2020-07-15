@@ -102,7 +102,6 @@
     <ClCompile Include="graphics\math\vec4.cpp" />
     <ClCompile Include="graphics\PointCloud.cpp" />
     <ClCompile Include="graphics\ShaderHandler.cpp" />
-    <ClCompile Include="graphics\ShapeStore.cpp" />
     <ClCompile Include="graphics\TextureHandler.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="PointCloud.cpp" />
@@ -115,7 +114,6 @@
     <ClInclude Include="graphics\math\vec4.hpp" />
     <ClInclude Include="graphics\PointCloud.h" />
     <ClInclude Include="graphics\ShaderHandler.hpp" />
-    <ClInclude Include="graphics\ShapeStore.h" />
     <ClInclude Include="graphics\TextureHandler.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="kernel.cuh" />

@@ -56,9 +56,6 @@
     <ClCompile Include="graphics\math\vec4.cpp">
       <Filter>Source\graphics\math</Filter>
     </ClCompile>
-    <ClCompile Include="graphics\ShapeStore.cpp">
-      <Filter>Source\graphics</Filter>
-    </ClCompile>
     <ClCompile Include="PointCloud.cpp" />
     <ClCompile Include="graphics\PointCloud.cpp">
       <Filter>Source\graphics</Filter>
@@ -87,9 +84,6 @@
       <Filter>Headers\graphics</Filter>
     </ClInclude>
     <ClInclude Include="graphics\TextureHandler.h">
-      <Filter>Headers\graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="graphics\ShapeStore.h">
       <Filter>Headers\graphics</Filter>
     </ClInclude>
     <ClInclude Include="graphics\math\mat4.hpp">
