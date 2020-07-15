@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{647ac21d-c6ea-44a1-aeac-6e0496d44c3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{0b55242d-a951-4335-bcb4-551af72da3e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\graphics">
+      <UniqueIdentifier>{3b55be28-d96d-43e0-aee4-c50df9acafda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\graphics\math">
+      <UniqueIdentifier>{79aa54b5-5a08-489a-950b-b49b5d600fce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\graphics">
+      <UniqueIdentifier>{6db786b2-e583-4abe-8956-d4b72a38fcca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\graphics\math">
+      <UniqueIdentifier>{0ad97fa5-e43a-4a26-917d-3979594cf5d1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Vector3.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+    <CudaCompile Include="vec3.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="PSim2.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\Graphics.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\GraphicsState.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\ShaderHandler.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\TextureHandler.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\math\mat4.cpp">
+      <Filter>Source\graphics\math</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\math\vec4.cpp">
+      <Filter>Source\graphics\math</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\ShapeStore.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="PointCloud.cpp" />
+    <ClCompile Include="graphics\PointCloud.cpp">
+      <Filter>Source\graphics</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Model.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="kernel.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="vec3.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\Graphics.h">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\GraphicsState.hpp">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\ShaderHandler.hpp">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\TextureHandler.h">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\ShapeStore.h">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\math\mat4.hpp">
+      <Filter>Headers\graphics\math</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\math\vec4.hpp">
+      <Filter>Headers\graphics\math</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="PointCloud.h" />
+    <ClInclude Include="graphics\PointCloud.h">
+      <Filter>Headers\graphics</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
