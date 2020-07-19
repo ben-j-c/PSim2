@@ -4,8 +4,18 @@
 #include "../IMGUI/imgui_impl_opengl3.h"
 #include "SettingsWrapper.h"
 
+#include <chrono>
+#include <numeric>
+
 
 namespace GUI {
+	struct {
+		bool start{ false };
+		bool stop{ false };
+		bool pause{ false };
+	} Signals;
+
+
 
 	void initialize(GLFWwindow* window) {
 		const char* glsl_version = "#version 460";
@@ -15,6 +25,25 @@ namespace GUI {
 		ImGui::StyleColorsDark();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
+	}
+
+	static void fpsText(){
+		static std::array<float, 100> frameTimes;
+		static int insertIndex = 0;
+
+		static auto lastTime = std::chrono::system_clock::now();
+		auto nowTime = std::chrono::system_clock::now();
+		float delta = std::chrono::duration_cast<std::chrono::nanoseconds>(
+			(std::chrono::duration<float>)(nowTime - lastTime)).count() / 1E9f;
+
+		lastTime = nowTime;
+
+		frameTimes[insertIndex] = delta;
+		insertIndex = (insertIndex + 1) % 100;
+
+		float avgFrameTime = std::accumulate(frameTimes.begin(), frameTimes.end(), 0.0f) / 100.0f;
+
+		ImGui::Text("%.0f FPS", 1.0f / avgFrameTime);
 	}
 
 	void draw() {
@@ -34,10 +63,29 @@ namespace GUI {
 		ImGui::SameLine();
 		ImGui::SliderFloat("Transparency", &alpha, 0, 1);
 
+		fpsText();
+
 		ImGui::Separator();
 		ImGui::Text("Simulation settings");
 
 		SettingsWrapper& sw = SettingsWrapper::get();
+
+		float width = ImGui::GetColumnWidth();
+		float height = ImGui::GetTextLineHeightWithSpacing();
+		ImGui::Button("Start", ImVec2(width/3, height));
+		if (ImGui::IsItemClicked()) {
+			Signals.start = true;
+		}
+		ImGui::SameLine();
+		ImGui::Button("Pause", ImVec2(width / 3, height));
+		if (ImGui::IsItemClicked()) {
+			Signals.pause = true;
+		}
+		ImGui::SameLine();
+		ImGui::Button("Stop", ImVec2(width / 3, height));
+		if (ImGui::IsItemClicked()) {
+			Signals.stop = true;
+		}
 
 		if (ImGui::CollapsingHeader("Simulation factors")) {
 			ImGui::InputFloat("Gravitational constant", &sw.SimulationFactors.gravConstant,0.0f, 0.0f, "%.5e");
@@ -61,7 +109,7 @@ namespace GUI {
 			ImGui::SliderFloat("Azimuth", &(sw.Camera.azimuth), -180, 180, "%.1f degrees");
 			ImGui::SliderFloat("Altitude", &(sw.Camera.altitude), -90, 90, "%.1f degrees");
 			ImGui::SliderFloat("Radius", &(sw.Camera.radius), 0.1f, 1000.0f, "%.3f", 3.0f);
-			ImGui::SliderFloat("Span", &(sw.Camera.span), 0.1f, 10.0f);
+			ImGui::SliderFloat("Fov", &(sw.Camera.fov), 1.0f, 120.0f);
 		}
 
 		sw.enforceBounds();

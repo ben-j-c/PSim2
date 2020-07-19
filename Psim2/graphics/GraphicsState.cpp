@@ -197,12 +197,12 @@ namespace Graphics {
 		}
 	}
 
-	void setCamera(float fov, float ratio, float near, float far, const vec4& cameraPos, const vec4& cameraLookAt, const vec4& cameraUpVector) {
+	void setCamera(float fov, float r_wh, float near, float far, const vec4& cameraPos, const vec4& cameraLookAt, const vec4& cameraUpVector) {
 		float f = (1 / tanf(fov / 180.0f* (float)M_PI / 2));
 		float d = far - near;
 
 		float pMatrix[16] = {
-			f / ratio,   0.0,       0.0,            0.0,
+			f / r_wh,  0.0,       0.0,            0.0,
 			0.0,       f,         0.0,            0.0,
 			0.0,       0.0,      -(near + far) / d,  -2 * near*far / d,
 			0.0,       0.0,      -1.0,            0.0

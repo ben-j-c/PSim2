@@ -36,7 +36,7 @@ private:
 
 public:
 	struct {
-		float azimuth = 0.0f, altitude = 0.0f, radius = 10.0f, span = 2.0f;
+		float azimuth = 0.0f, altitude = 0.0f, radius = 10.0f, fov = 80.0f;
 	} Camera;
 
 	struct {
@@ -61,8 +61,6 @@ public:
 	} SimulationFactors;
 
 
-
-
 	static SettingsWrapper& get() {
 		return *singleton;
 	};
@@ -71,7 +69,7 @@ public:
 		clamp(Camera.azimuth, -180.0f, 180.0f);
 		clamp(Camera.altitude, -90.0f, 90.0f);
 		clamp(Camera.radius, 0.01f, INFINITY);
-		clamp(Camera.span, 0.0f, INFINITY);
+		clamp(Camera.fov, 0.1f, 120.0f);
 
 		clamp(Spawn.N, 0ui64, SIZE_MAX);
 		clamp(Spawn.blackHoleMassProportion, 0.0f, INFINITY);

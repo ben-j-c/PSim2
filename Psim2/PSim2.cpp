@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <memory>
+#include <math.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -18,6 +19,19 @@ int display_w, display_h;
 
 static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
+
+static void poseCamera() {
+	SettingsWrapper& sw = SettingsWrapper::get();
+	float ratio = (float)display_w / display_h;
+	float r = sw.Camera.radius;
+	Graphics::vec4 camPos = {
+		r*cosf(sw.Camera.azimuth)*cosf(sw.Camera.altitude),
+		r*sinf(sw.Camera.altitude),
+		r*sinf(sw.Camera.azimuth)*cosf(sw.Camera.altitude),
+		0.0f
+	};
+	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 1000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
 }
 
 int main() {
@@ -35,7 +49,7 @@ int main() {
 			return 1;
 		}
 		glfwMakeContextCurrent(window);
-		glfwSwapInterval(1);
+		glfwSwapInterval(0);
 
 		if (glewInit()) {
 			fprintf(stderr, "Failed to initialize GLEW\n");
@@ -66,6 +80,11 @@ int main() {
 			glViewport(0, 0, display_w, display_h);
 			glClearColor(0.25f, 0.25f, 0.25f, 0);
 			glClear(GL_COLOR_BUFFER_BIT);
+
+
+
+
+
 
 			GUI::draw();
 
