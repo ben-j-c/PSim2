@@ -19,6 +19,9 @@
     <Filter Include="Headers\graphics\math">
       <UniqueIdentifier>{0ad97fa5-e43a-4a26-917d-3979594cf5d1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{da72a2a1-6af5-4bce-9b2b-102757ceec79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="kernel.cu">
@@ -56,9 +59,8 @@
     <ClCompile Include="graphics\math\vec4.cpp">
       <Filter>Source\graphics\math</Filter>
     </ClCompile>
-    <ClCompile Include="PointCloud.cpp" />
-    <ClCompile Include="graphics\PointCloud.cpp">
-      <Filter>Source\graphics</Filter>
+    <ClCompile Include="SettingsWrapper.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -95,9 +97,19 @@
     <ClInclude Include="GUI.h">
       <Filter>Headers\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="PointCloud.h" />
     <ClInclude Include="graphics\PointCloud.h">
       <Filter>Headers\graphics</Filter>
     </ClInclude>
+    <ClInclude Include="SettingsWrapper.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\fragment.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\vertex.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

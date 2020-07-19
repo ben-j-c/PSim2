@@ -2,6 +2,7 @@
 #include "../IMGUI/imgui.h"
 #include "../IMGUI/imgui_impl_glfw.h"
 #include "../IMGUI/imgui_impl_opengl3.h"
+#include "SettingsWrapper.h"
 
 
 namespace GUI {
@@ -21,26 +22,52 @@ namespace GUI {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+
+		static bool transparency = false;
+		static float alpha = 1.0f;
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, transparency ? alpha:1.0f);
 		ImGui::Begin("Settings");
 
+		ImGui::Text("Window settings");
+		ImGui::Checkbox("", &transparency);
+		ImGui::SameLine();
+		ImGui::SliderFloat("Transparency", &alpha, 0, 1);
 
-		if (ImGui::CollapsingHeader("Simulation parameters")) {
-			;
+		ImGui::Separator();
+		ImGui::Text("Simulation settings");
+
+		SettingsWrapper& sw = SettingsWrapper::get();
+
+		if (ImGui::CollapsingHeader("Simulation factors")) {
+			ImGui::InputFloat("Gravitational constant", &sw.SimulationFactors.gravConstant,0.0f, 0.0f, "%.5e");
+			ImGui::InputFloat("Time step", &sw.SimulationFactors.timeStep, 0.0f, 0.0f, "%.5e");
+		}
+
+		if (ImGui::CollapsingHeader("Initial parameters")) {
+			ImGui::InputScalar("N", ImGuiDataType_U64, (void*)&sw.Spawn.N);
+			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring");
+			ImGui::InputFloat2("Parameters X", sw.Spawn.paramX.data(), 4);
+			ImGui::InputFloat2("Parameters Y", sw.Spawn.paramY.data(), 4);
+			ImGui::InputFloat2("Parameters Z", sw.Spawn.paramZ.data(), 4);
+			ImGui::InputFloat2("Parameters mass", sw.Spawn.paramMass.data(), 4);
+			ImGui::Checkbox("Black hole", &sw.Spawn.blackHole); ImGui::SameLine();
+			ImGui::InputFloat("Mass factor", &sw.Spawn.blackHoleMassProportion, 0.02, 0.1, 4);
+			ImGui::Combo("Angular momentum", (int*) &(sw.Spawn.angularMomentum), "None\0Inverse Magnitude\0Inverse magnitude squared\0Magnitude\0Magnitude Squared\0Uniform\0Gaussian");
 		}
 
 
-		static struct {
-			float azimuth, altitude, radius = 10.0f, span = 2.0f;
-		} Camera;
 		if (ImGui::CollapsingHeader("Camera parameters")) {
-			ImGui::SliderFloat("Azimuth", &(Camera.azimuth), -180, 180, "%.1f degrees");
-			ImGui::SliderFloat("Altitude", &(Camera.altitude), -90, 90, "%.1f degrees");
-			ImGui::SliderFloat("Radius", &(Camera.radius), 0.1f, 1000.0f, "%.3f", 3.0f);
-			ImGui::SliderFloat("Span", &(Camera.span), 0.1f, 10.0f);
+			ImGui::SliderFloat("Azimuth", &(sw.Camera.azimuth), -180, 180, "%.1f degrees");
+			ImGui::SliderFloat("Altitude", &(sw.Camera.altitude), -90, 90, "%.1f degrees");
+			ImGui::SliderFloat("Radius", &(sw.Camera.radius), 0.1f, 1000.0f, "%.3f", 3.0f);
+			ImGui::SliderFloat("Span", &(sw.Camera.span), 0.1f, 10.0f);
 		}
+
+		sw.enforceBounds();
 
 		ImGui::End();
-
+		ImGui::PopStyleVar(1);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

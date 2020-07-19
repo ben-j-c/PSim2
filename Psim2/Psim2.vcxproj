@@ -100,12 +100,11 @@
     <ClCompile Include="graphics\GraphicsState.cpp" />
     <ClCompile Include="graphics\math\mat4.cpp" />
     <ClCompile Include="graphics\math\vec4.cpp" />
-    <ClCompile Include="graphics\PointCloud.cpp" />
     <ClCompile Include="graphics\ShaderHandler.cpp" />
     <ClCompile Include="graphics\TextureHandler.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="PointCloud.cpp" />
     <ClCompile Include="PSim2.cpp" />
+    <ClCompile Include="SettingsWrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graphics\Graphics.h" />
@@ -118,9 +117,13 @@
     <ClInclude Include="GUI.h" />
     <ClInclude Include="kernel.cuh" />
     <ClInclude Include="Model.h" />
-    <ClInclude Include="PointCloud.h" />
+    <ClInclude Include="SettingsWrapper.h" />
     <ClInclude Include="vec3.cuh" />
     <ClInclude Include="Vector3.cuh" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\fragment.glsl" />
+    <None Include="shaders\vertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
