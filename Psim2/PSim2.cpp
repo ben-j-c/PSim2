@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <memory>
 #include <math.h>
+#include <optional>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -14,6 +15,7 @@
 #include "graphics/Graphics.h"
 #include "graphics/GraphicsState.hpp"
 #include "graphics/ShaderHandler.hpp"
+#include "Model.h"
 
 int display_w, display_h;
 
@@ -69,7 +71,8 @@ int main() {
 		ShaderHandler::attachShader(DEFAULT_PROG, SHADER_FRAG);
 		ShaderHandler::linkShaders(DEFAULT_PROG);
 
-
+		static bool stepSim, drawSim;
+		std::optional<Model> model;
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
 			glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -81,10 +84,38 @@ int main() {
 			glClearColor(0.25f, 0.25f, 0.25f, 0);
 			glClear(GL_COLOR_BUFFER_BIT);
 
+			SettingsWrapper& sw = SettingsWrapper::get();
+
+			if (GUI::Signals.start) {
+				if (!model) {
+					model.emplace(sw.Spawn.N, ShaderHandler::getProgram(DEFAULT_PROG));
+					stepSim = false;
+					drawSim = true;
+				}
+			}
+			else if (GUI::Signals.stop) {
+				model.reset();
+				stepSim = false;
+				drawSim = false;
+			}
+			else if (GUI::Signals.resume) {
+				if (model) {
+					stepSim = true;
+				}
+			}
+			else if (GUI::Signals.pause) {
+				if (model) {
+					stepSim = false;
+				}
+			}
+
+			if (stepSim)
+				model->step();
+			if (drawSim)
+				model->draw();
 
 
-
-
+			GUI::Signals = { false, false, false, false };
 
 			GUI::draw();
 

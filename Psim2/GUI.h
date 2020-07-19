@@ -13,6 +13,7 @@ namespace GUI {
 		bool start{ false };
 		bool stop{ false };
 		bool pause{ false };
+		bool resume{ false };
 	} Signals;
 
 
@@ -72,20 +73,27 @@ namespace GUI {
 
 		float width = ImGui::GetColumnWidth();
 		float height = ImGui::GetTextLineHeightWithSpacing();
-		ImGui::Button("Start", ImVec2(width/3, height));
+		ImGui::Button("Start", ImVec2(width / 4, height));
 		if (ImGui::IsItemClicked()) {
 			Signals.start = true;
 		}
 		ImGui::SameLine();
-		ImGui::Button("Pause", ImVec2(width / 3, height));
-		if (ImGui::IsItemClicked()) {
-			Signals.pause = true;
-		}
-		ImGui::SameLine();
-		ImGui::Button("Stop", ImVec2(width / 3, height));
+		ImGui::Button("Stop", ImVec2(width / 4, height));
 		if (ImGui::IsItemClicked()) {
 			Signals.stop = true;
 		}
+		ImGui::SameLine();
+		ImGui::Button("Resume", ImVec2(width / 4, height));
+		if (ImGui::IsItemClicked()) {
+			Signals.pause = true;
+		}
+
+		ImGui::SameLine();
+		ImGui::Button("Pause", ImVec2(width / 4, height));
+		if (ImGui::IsItemClicked()) {
+			Signals.pause = true;
+		}
+		
 
 		if (ImGui::CollapsingHeader("Simulation factors")) {
 			ImGui::InputFloat("Gravitational constant", &sw.SimulationFactors.gravConstant,0.0f, 0.0f, "%.5e");

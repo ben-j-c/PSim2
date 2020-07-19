@@ -7,6 +7,7 @@
 
 namespace ShaderHandler {
 	void createProgram(const std::string& name);
+	uint32_t getProgram(const std::string& name);
 	void switchProgram(const std::string& name);
 	int attachShader(const std::string& program, const std::string& name);
 	int loadVertexShader(const std::string& program, const std::string& name);

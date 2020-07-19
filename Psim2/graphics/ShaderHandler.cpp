@@ -26,6 +26,12 @@ void ShaderHandler::createProgram(const std::string& name) {
 	}
 }
 
+uint32_t ShaderHandler::getProgram(const std::string & name) {
+	if (hasProgram(name))
+		return programs[name].id;
+	return 0;
+}
+
 void ShaderHandler::switchProgram(const std::string& name) {
 	if (name.compare("null") == 0) {
 		Graphics::program = 0;

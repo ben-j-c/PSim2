@@ -1,9 +1,8 @@
-#ifndef DEVICE_KERNEL
-#define DEVICE_KERNEL
+#pragma once
 
 #include "Vector3.cuh"
 
-typedef struct {
+typedef struct Particle {
 	Vector3 pos;
 	Vector3 v;
 	float q, m;
@@ -18,5 +17,3 @@ namespace DeviceFunctions {
 	void doStep(float timeStep, Vector3 *pos, Vector3* colour);
 	int shutdown();
 }
-
-#endif
