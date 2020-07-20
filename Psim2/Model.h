@@ -10,5 +10,6 @@ public:
 	~Model();
 	void step();
 	void draw();
+	static void releaseCuda();
 
 };

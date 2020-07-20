@@ -196,7 +196,7 @@ void DeviceFunctions::doStep(float timestep, Vector3 *pos, Vector3 *colour) {
 	dim3 threadsPerBlock(blockSize, 1, 1);
 
 #if defined(USE_SHARED)
-	gpu_doStepWithShared << < blocks, threadsPerBlock >> > (pos, colour, device_plist, numpart, 1.5, 0.0001, (float)timestep);
+	gpu_doStepWithShared <<< blocks, threadsPerBlock >>> (pos, colour, device_plist, numpart, 1.5, 0.0001, (float)timestep);
 #else
 	gpu_doStep << < blocks, threadsPerBlock >> > (pos, colour, device_plist, numpart, 1.5, 0.0001, (float)timestep)
 #endif
@@ -246,7 +246,5 @@ int DeviceFunctions::shutdown() {
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
 	cudaErrorCheck(cudaFree(device_plist));
 	free(plist);
-	cudaErrorCheck(cudaDeviceReset());
-
 	return 0;
 }

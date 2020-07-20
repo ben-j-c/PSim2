@@ -85,7 +85,7 @@ namespace GUI {
 		ImGui::SameLine();
 		ImGui::Button("Resume", ImVec2(width / 4, height));
 		if (ImGui::IsItemClicked()) {
-			Signals.pause = true;
+			Signals.resume = true;
 		}
 
 		ImGui::SameLine();

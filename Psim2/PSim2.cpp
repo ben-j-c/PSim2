@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <memory>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <optional>
 
@@ -27,12 +28,15 @@ static void poseCamera() {
 	SettingsWrapper& sw = SettingsWrapper::get();
 	float ratio = (float)display_w / display_h;
 	float r = sw.Camera.radius;
+	float alt = sw.Camera.altitude*M_PI/180.0f;
+	float azi = sw.Camera.azimuth*M_PI/180.0f;
 	Graphics::vec4 camPos = {
-		r*cosf(sw.Camera.azimuth)*cosf(sw.Camera.altitude),
-		r*sinf(sw.Camera.altitude),
-		r*sinf(sw.Camera.azimuth)*cosf(sw.Camera.altitude),
+		r*cosf(azi)*cosf(alt),
+		r*sinf(alt),
+		r*sinf(azi)*cosf(alt),
 		0.0f
 	};
+	//Graphics::setCamera2D(ratio, 10, { 0,0,0,0 });
 	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 1000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
 }
 
@@ -71,8 +75,12 @@ int main() {
 		ShaderHandler::attachShader(DEFAULT_PROG, SHADER_FRAG);
 		ShaderHandler::linkShaders(DEFAULT_PROG);
 
-		static bool stepSim, drawSim;
+		printf("%s\n", glGetString(GL_VERSION));
+
+		SettingsWrapper& sw = SettingsWrapper::get();
+		bool stepSim = false, drawSim = true;
 		std::optional<Model> model;
+		model.emplace(sw.Spawn.N, ShaderHandler::getProgram(DEFAULT_PROG));
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
 			glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -80,12 +88,17 @@ int main() {
 			ShaderHandler::switchProgram(DEFAULT_PROG);
 			glBindVertexArray(*VAO); checkGL("Bind VAO");
 
+			glEnable(GL_BLEND); checkGL("blend enable");
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); checkGL("blend func set");
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO); checkGL("blend func seperate");
+			glPointSize(2.0f); checkGL("point size");
 			glViewport(0, 0, display_w, display_h);
 			glClearColor(0.25f, 0.25f, 0.25f, 0);
 			glClear(GL_COLOR_BUFFER_BIT);
+			
+			poseCamera();
 
-			SettingsWrapper& sw = SettingsWrapper::get();
-
+			
 			if (GUI::Signals.start) {
 				if (!model) {
 					model.emplace(sw.Spawn.N, ShaderHandler::getProgram(DEFAULT_PROG));
@@ -109,11 +122,11 @@ int main() {
 				}
 			}
 
-			if (stepSim)
-				model->step();
 			if (drawSim)
 				model->draw();
-
+			checkGL("idk");
+			if (stepSim)
+				model->step();
 
 			GUI::Signals = { false, false, false, false };
 
@@ -122,6 +135,7 @@ int main() {
 			glfwSwapBuffers(window);
 		}
 
+		Model::releaseCuda();
 		ShaderHandler::shutdownShaders(DEFAULT_PROG);
 	}
 	catch (std::exception e) {
