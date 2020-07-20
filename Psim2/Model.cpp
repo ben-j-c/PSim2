@@ -12,7 +12,6 @@ Model::~Model() {
 void Model::step() {
 	SettingsWrapper& sw = SettingsWrapper::get();
 	DeviceFunctions::doStep(sw.SimulationFactors.timeStep, (Vector3*) cloud.vPos_device, (Vector3*) cloud.vColour_device); //TODO: replace Vector3 with vec3
-	auto a = cudaGetLastError();
 }
 
 void Model::draw() {

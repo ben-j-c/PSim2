@@ -197,6 +197,7 @@ void DeviceFunctions::doStep(float timestep, Vector3 *pos, Vector3 *colour) {
 
 #if defined(USE_SHARED)
 	gpu_doStepWithShared <<< blocks, threadsPerBlock >>> (pos, colour, device_plist, numpart, 1.5, 0.0001, (float)timestep);
+	cudaDeviceSynchronize();
 #else
 	gpu_doStep << < blocks, threadsPerBlock >> > (pos, colour, device_plist, numpart, 1.5, 0.0001, (float)timestep)
 #endif

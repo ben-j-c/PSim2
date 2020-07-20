@@ -72,8 +72,6 @@ public:
 	}
 
 	void draw(GLuint program) {
-		if (_DEBUG)
-			debugGraphics(program);
 
 		auto pos = glGetAttribLocation(program, "vPos");
 		auto colour = glGetAttribLocation(program, "vColour");

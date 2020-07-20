@@ -65,9 +65,10 @@ namespace Graphics {
 		uint32_t flags;
 		VBObject_CUDA(size_t size, uint32_t flags) : VBObject(), size(size), flags(flags){
 			glBindBuffer(GL_ARRAY_BUFFER, *resource);
-			glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+			
 			cudaGraphicsGLRegisterBuffer(&cuda, *resource, flags);
-			cudaGraphicsMapResources(1, &cuda);
+			cudaGraphicsMapResources(1, &cuda, 0);
 		}
 
 		~VBObject_CUDA() {
