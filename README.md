@@ -24,7 +24,8 @@ The GUI was developed using the OpenGL3 + GLFW implementation for [ImGui](https:
 
 # Future Feature Goals
 * Fully parameterizing initial conditions for gravity simulation.
-* Fast multipole method implementation for gravity.
+* Vastly increase number of particles (done via implementing fast multipole method).
+  * From preliminary calculations, it seems that the current implementation is memory bandwidth limited. By implementing FMM, it *should* be feasible to convert the O(N^2) runtime to O(N) and hence increase the number of particles that can be reasonably simulated substantially. Preliminary calculations expect a >100x increase in the number of simulatable particles, while maintaining 60 FPS.
 * Possibly interacting particles (merging, annihilation, collision, etc.).
 * Simulations other than just gravity.
 
