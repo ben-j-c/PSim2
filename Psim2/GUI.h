@@ -116,6 +116,12 @@ namespace GUI {
 			ImGui::Checkbox("Black hole", &sw.Spawn.blackHole); ImGui::SameLine();
 			ImGui::InputFloat("Mass factor", &sw.Spawn.blackHoleMassProportion, 0.02, 0.1, 4);
 			ImGui::Combo("Angular momentum", (int*) &(sw.Spawn.angularMomentum), "None\0Inverse Magnitude\0Inverse magnitude squared\0Magnitude\0Magnitude Squared\0Uniform\0Gaussian");
+			static bool recip = true;
+			ImGui::Checkbox("Reciprocal", &recip); ImGui::SameLine();
+			float amc = recip? 1.0f/sw.Spawn.initialAngularMomentumCoefficent:sw.Spawn.initialAngularMomentumCoefficent;
+			ImGui::DragFloat("Momentum factor", &(amc), recip? 1.0f:0.001f);
+			sw.Spawn.initialAngularMomentumCoefficent = recip ? 1.0f/amc:amc;
+
 		}
 
 

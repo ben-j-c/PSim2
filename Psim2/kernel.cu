@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "kernel.cuh"
+#include "SettingsWrapper.h"
 
 #define USE_SHARED
 
@@ -124,16 +125,6 @@ static __global__ void gpu_doStepWithShared(Vector3 *outPos, Vector3 *outColor, 
 	copyVector3(&nplist[idx].v, &newV);
 }
 
-static __global__ void computeVelocity(Particle* parts) {
-	int i = threadIdx.x + blockDim.x*blockIdx.x;
-
-	float mag = magVector3(&parts[i].pos);
-	Vector3 ortho = { -parts[i].pos.z, 0.0, parts[i].pos.x };
-	normVector3(&ortho);
-	scaleVector3(&ortho, mag / 75.0);
-	copyVector3(&parts[i].v, &ortho);
-}
-
 static __global__ void loadOutputs(Vector3 * pos, Vector3 * colour, Particle * nplist) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	setColour(nplist[idx], idx, colour);
@@ -162,13 +153,9 @@ void DeviceFunctions::doStep(float timestep, Vector3 *pos, Vector3 *colour) {
 	dim3 blocks(numpart / blockSize, 1, 1);
 	dim3 threadsPerBlock(blockSize, 1, 1);
 
-	printf("Pos:    %#016llx\n", pos);
-	printf("Colour: %#016llx\n", colour);
-	printf("Plist:  %#016llx\n", device_plist);
 	cudaDeviceSynchronize();
 	gpu_doStepWithShared <<< blocks, threadsPerBlock >>> (pos, colour, device_plist, numpart, 1.5, 0.0001, timestep);
 	cudaErrorCheck(cudaGetLastError());
-	printf("--------------------------------\n");
 }
 
 
@@ -179,6 +166,10 @@ static float randFloat() {
 
 static float randRange(float a, float b) {
 	return ((float)rand() / RAND_MAX)*(b - a) + a;
+}
+
+static float randRange(std::array<float, 2> ab) {
+	return ((float)rand() / RAND_MAX)*(ab[1] - ab[0]) + ab[0];
 }
 
 int DeviceFunctions::setup(int num) {
@@ -193,12 +184,49 @@ int DeviceFunctions::setup(int num) {
 	host_pos = (Vector3*)malloc(sizeof(Vector3)*numpart);
 
 
+	SettingsWrapper &sw = SettingsWrapper::get();
 	for (int i = 0; i < numpart; i++) {
-		plist[i].pos = { randRange(-15,15),randRange(-5,5),randRange(-15,15) };
+		plist[i].pos = { randRange(sw.Spawn.paramX),randRange(sw.Spawn.paramY),randRange(sw.Spawn.paramZ) };
+		//plist[i].pos = { randRange(-10,10),randRange(-1,1),randRange(-5,5) };
 		plist[i].v = { 0.0, 0.0, 0.0 };
 		plist[i].m = randFloat() / numpart;
-		plist[i].q = randRange(0.001, 0.001) / numpart; //10% should be weakly negative. This should allow for clumping
 		plist[i].isStationary = 0;
+	}
+
+	for (int i = 0; i < numpart; i++) {
+		float mag = magVector3(&plist[i].pos);
+		Vector3 ortho = { -plist[i].pos.z, 0.0, plist[i].pos.x };
+		normVector3(&ortho);
+		float scale;
+		switch (sw.Spawn.angularMomentum) {
+		case AngularMomentum_Distr::NONE:
+			scale = 0;
+			break;
+		case AngularMomentum_Distr::MAG_SQ:
+			scale = mag*mag;
+			break;
+		case AngularMomentum_Distr::MAG:
+			scale = mag;
+			break;
+		case AngularMomentum_Distr::INV_MAG_SQ:
+			scale = 1.0f/(mag*mag);
+			break;
+		case AngularMomentum_Distr::INV_MAG:
+			scale = 1.0f/mag;
+			break;
+		case AngularMomentum_Distr::UNIFORM:
+			scale = randFloat();
+			break;
+		case AngularMomentum_Distr::GAUSS:
+			scale = 0;
+			break;
+		default:
+			scale = 0;
+			break;
+
+		}
+		scaleVector3(&ortho, scale*sw.Spawn.initialAngularMomentumCoefficent);
+		copyVector3(&plist[i].v, &ortho);
 	}
 
 	cudaErrorCheck(cudaMalloc(&device_plist, sizeof(Particle)*numpart));
@@ -207,7 +235,6 @@ int DeviceFunctions::setup(int num) {
 	dim3 blocks(numpart / blockSize, 1, 1);
 	dim3 threadsPerBlock(blockSize, 1, 1);
 
-	computeVelocity <<< blocks, threadsPerBlock >>> (device_plist);
 	cudaErrorCheck(cudaGetLastError());
 
 	firstRun = false;

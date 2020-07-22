@@ -5,7 +5,7 @@
 typedef struct Particle {
 	Vector3 pos;
 	Vector3 v;
-	float q, m;
+	float m;
 	bool isStationary;
 } Particle;
 

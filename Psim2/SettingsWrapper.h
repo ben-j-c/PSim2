@@ -47,8 +47,8 @@ public:
 			paramZ{ -5,5 },
 			paramMass{0, 1.0f};
 		Spawn_Distr::Spawn_Distr spawn_distr = Spawn_Distr::UNIFORM;
-		AngularMomentum_Distr::AngularMomentum_Distr angularMomentum = AngularMomentum_Distr::INV_MAG;
-		float initialAngularMomentumCoefficent = 1.0f/250.0f;
+		AngularMomentum_Distr::AngularMomentum_Distr angularMomentum = AngularMomentum_Distr::MAG;
+		float initialAngularMomentumCoefficent = 1.0f/75.0f;
 
 		bool blackHole = false;
 		float blackHoleMassProportion = 0.25f;

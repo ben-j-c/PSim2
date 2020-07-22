@@ -80,7 +80,7 @@ int main() {
 		SettingsWrapper& sw = SettingsWrapper::get();
 		bool stepSim = false, drawSim = true;
 		std::optional<Model> model;
-		model.emplace(sw.Spawn.N, ShaderHandler::getProgram(DEFAULT_PROG));
+
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
 			glfwGetFramebufferSize(window, &display_w, &display_h);
