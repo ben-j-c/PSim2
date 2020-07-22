@@ -14,6 +14,12 @@ namespace GUI {
 		bool stop{ false };
 		bool pause{ false };
 		bool resume{ false };
+		bool mouseReleased{ false };
+		bool mouseDown{ false };
+		float dragX;
+		float dragY;
+		bool zoomOut;
+		bool zoomIn;
 	} Signals;
 
 
@@ -121,6 +127,29 @@ namespace GUI {
 		}
 
 		sw.enforceBounds();
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.MouseReleased[0]) {
+			Signals.mouseReleased = true;
+		}
+		if (io.MouseDown[0]) {
+			if (!ImGui::IsAnyWindowFocused()) {
+				Signals.dragX = io.MouseDelta.x;
+				Signals.dragY = io.MouseDelta.y;
+				Signals.mouseDown = true;
+			}
+			else {
+				Signals.dragX = 0;
+				Signals.dragY = 0;
+				Signals.mouseDown = false;
+			}
+		}
+
+		if (io.MouseWheel > 0) {
+			Signals.zoomIn = true;
+		}
+		else if (io.MouseWheel < 0) {
+			Signals.zoomOut = true;
+		}
 
 		ImGui::End();
 		ImGui::PopStyleVar(1);

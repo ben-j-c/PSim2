@@ -4,6 +4,14 @@
 #include <memory>
 #include <cuda_gl_interop.h>
 #define checkGL(ans) { Graphics::checkOGLError(ans,__FILE__, __LINE__, __FUNCTION__); } 
+#define cudaErrorCheck(...) { cudaErrorCheckingFunction((__VA_ARGS__), __FILE__, __LINE__); } 
+
+static inline void cudaErrorCheckingFunction(cudaError_t error, const char* file, int line, bool abort = true) {
+	if (error != cudaSuccess) {
+		fprintf(stderr, "Cuda error: %s %s %d\n", cudaGetErrorString(error), file, line);
+		//throw std::runtime_error("CUDA error");
+	}
+}
 
 namespace Graphics {
 	extern GLuint program;
@@ -67,13 +75,13 @@ namespace Graphics {
 			glBindBuffer(GL_ARRAY_BUFFER, *resource);
 			glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 			
-			cudaGraphicsGLRegisterBuffer(&cuda, *resource, flags);
-			cudaGraphicsMapResources(1, &cuda, 0);
+			cudaErrorCheck(cudaGraphicsGLRegisterBuffer(&cuda, *resource, flags));
+			cudaErrorCheck(cudaGraphicsMapResources(1, &cuda, 0));
 		}
 
 		~VBObject_CUDA() {
-			cudaGraphicsUnmapResources(1, &cuda, 0);
-			cudaGraphicsUnregisterResource(cuda);
+			cudaErrorCheck(cudaGraphicsUnmapResources(1, &cuda, 0));
+			cudaErrorCheck(cudaGraphicsUnregisterResource(cuda));
 		}
 	};
 }

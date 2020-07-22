@@ -3,6 +3,8 @@
 #include "SettingsWrapper.h"
 
 Model::Model(size_t N, GLuint program) : cloud(DeviceFunctions::setup(N)), program(program) {
+	DeviceFunctions::loadData((Vector3*) cloud.vPos_device, (Vector3*) cloud.vColour_device);
+	SettingsWrapper& sw = SettingsWrapper::get();
 }
 
 Model::~Model() {
@@ -19,5 +21,5 @@ void Model::draw() {
 }
 
 void Model::releaseCuda() {
-	cudaDeviceReset();
+	//cudaDeviceReset();
 }

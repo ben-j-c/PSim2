@@ -37,11 +37,11 @@ static void poseCamera() {
 		0.0f
 	};
 	//Graphics::setCamera2D(ratio, 10, { 0,0,0,0 });
-	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 1000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
+	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 10000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
 }
 
 int main() {
-	try {
+	{
 
 		if (!glfwInit())
 			return 1;
@@ -96,7 +96,27 @@ int main() {
 			glClearColor(0.25f, 0.25f, 0.25f, 0);
 			glClear(GL_COLOR_BUFFER_BIT);
 			
-			poseCamera();
+
+			if (GUI::Signals.mouseDown) {
+				sw.Camera.azimuth += GUI::Signals.dragX / 5.0f;
+				sw.Camera.altitude += GUI::Signals.dragY / 5.0f;
+				sw.Camera.altitude = fminf(89.0f, fmaxf(-89.0f, sw.Camera.altitude));
+
+				sw.Camera.azimuth = fmodf(sw.Camera.azimuth, 360);
+				if (sw.Camera.azimuth < -180.0f) {
+					sw.Camera.azimuth = 180.0f + fmodf(sw.Camera.azimuth, 180.0f);
+				}
+				else if (sw.Camera.azimuth > 180.0f) {
+					sw.Camera.azimuth = -180.0f + fmodf(sw.Camera.azimuth, 180.0f);
+				}
+			}
+
+			if (GUI::Signals.zoomIn) {
+				sw.Camera.radius /= 1.1f;
+			}
+			if (GUI::Signals.zoomOut) {
+				sw.Camera.radius *= 1.1f;
+			}
 
 			
 			if (GUI::Signals.start) {
@@ -107,7 +127,10 @@ int main() {
 				}
 			}
 			else if (GUI::Signals.stop) {
-				model.reset();
+				if (model) {
+					model.reset();
+					Model::releaseCuda();
+				}
 				stepSim = false;
 				drawSim = false;
 			}
@@ -122,24 +145,27 @@ int main() {
 				}
 			}
 
-			if (drawSim)
+			poseCamera();
+
+			if (drawSim && model)
 				model->draw();
 			checkGL("idk");
-			if (stepSim)
+			if (stepSim && model)
 				model->step();
 
-			GUI::Signals = { false, false, false, false };
+
+
+
+			GUI::Signals = { false, false, false, false, false, false, 0, 0, false, false };
 
 			GUI::draw();
 
 			glfwSwapBuffers(window);
 		}
 
-		Model::releaseCuda();
+		if(model)
+			Model::releaseCuda();
 		ShaderHandler::shutdownShaders(DEFAULT_PROG);
-	}
-	catch (std::exception e) {
-		std::fprintf(stderr, "%s\n", e.what());
 	}
 	return 0;
 }

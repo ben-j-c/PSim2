@@ -15,5 +15,6 @@ namespace DeviceFunctions {
 	Vector3* getParticlePos(Vector3 *pos);
 	int setup(int num);
 	void doStep(float timeStep, Vector3 *pos, Vector3* colour);
+	void loadData(Vector3 *pos, Vector3* colour);
 	int shutdown();
 }
