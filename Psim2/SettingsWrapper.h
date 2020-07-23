@@ -1,17 +1,19 @@
 #pragma once
 #include <memory>
 #include <array>
+#include <functional>
+#include <optional>
 
 
 namespace Spawn_Distr{
 	typedef enum Spawn_Distr {
-		UNIFORM = 0, GAUSS = 1, RING = 2
+		UNIFORM = 0, GAUSS = 1, RING = 2, USER_DEFINED = 3
 	};
 };
 
 namespace  AngularMomentum_Distr {
 	typedef enum AngularMomentum_Distr {
-		NONE = 0, INV_MAG = 1, INV_MAG_SQ = 2, MAG = 3, MAG_SQ = 4, UNIFORM = 5, GAUSS = 6
+		NONE = 0, INV_MAG = 1, INV_MAG_SQ = 2, MAG = 3, MAG_SQ = 4, UNIFORM = 5, GAUSS = 6, USER_DEFINED = 7
 	};
 };
 
@@ -53,6 +55,11 @@ public:
 		bool blackHole = false;
 		float blackHoleMassProportion = 0.25f;
 		
+		//CUDA 10.2 does not support unique
+		bool SpawnFunc_good = false;
+		bool VelocityFunc_good = false;
+		std::function<float(float, float, float, float, float, float, float)> SpawnFunc;
+		std::function<float(float, float, float, float, float, float, float)> VelocityFunc;
 	} Spawn;
 
 	struct {

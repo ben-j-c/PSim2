@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <numeric>
+#include <optional>
 
 
 namespace GUI {
@@ -14,13 +15,16 @@ namespace GUI {
 		bool stop{ false };
 		bool pause{ false };
 		bool resume{ false };
+	} Signals;
+
+	struct {
 		bool mouseReleased{ false };
 		bool mouseDown{ false };
 		float dragX;
 		float dragY;
 		bool zoomOut;
 		bool zoomIn;
-	} Signals;
+	} Mouse;
 
 
 
@@ -32,6 +36,16 @@ namespace GUI {
 		ImGui::StyleColorsDark();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
+	}
+
+	static void statusText(bool status) {
+		ImGui::SameLine();
+		if (status) {
+			ImGui::TextColored(ImVec4{ 0,1,0,1 }, "Valid");
+		}
+		else {
+			ImGui::TextColored(ImVec4{ 1,0,0,1 }, "Invalid");
+		}
 	}
 
 	static void fpsText(){
@@ -108,20 +122,62 @@ namespace GUI {
 
 		if (ImGui::CollapsingHeader("Initial parameters")) {
 			ImGui::InputScalar("N", ImGuiDataType_U64, (void*)&sw.Spawn.N);
-			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring");
-			ImGui::InputFloat2("Parameters X", sw.Spawn.paramX.data(), 4);
-			ImGui::InputFloat2("Parameters Y", sw.Spawn.paramY.data(), 4);
-			ImGui::InputFloat2("Parameters Z", sw.Spawn.paramZ.data(), 4);
+			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring\0User defined P: R3 -> R");
+			ImGui::Separator();
+			if (sw.Spawn.spawn_distr == Spawn_Distr::USER_DEFINED) {
+				static bool good = true;
+				static char pdf[1024] = "x^2 + y^2 + z^2 < 100? 1:0";
+				ImGui::InputText("P(x,y,z)", pdf, 1024); statusText(good);
+
+				if (ImGui::TreeNode("Supported symbols")) {
+					ImGui::Text("x     : First euclidean coordinate in right handed system.");
+					ImGui::Text("y     : Second euclidean coordinate in right handed system.");
+					ImGui::Text("z     : Third euclidean coordinate in right handed system.");
+					ImGui::Text("r     : L2-norm on (x,y,z).");
+					ImGui::Text("theta : Azimuth (rotation from x toward z).");
+					ImGui::Text("phi   : Altitude (rotation from xz plane).");
+					ImGui::TreePop();
+				}
+			}
+			else {
+				ImGui::InputFloat2("Parameters X", sw.Spawn.paramX.data(), 4);
+				ImGui::InputFloat2("Parameters Y", sw.Spawn.paramY.data(), 4);
+				ImGui::InputFloat2("Parameters Z", sw.Spawn.paramZ.data(), 4);
+			}
+			ImGui::Separator();
 			ImGui::InputFloat2("Parameters mass", sw.Spawn.paramMass.data(), 4);
 			ImGui::Checkbox("Black hole", &sw.Spawn.blackHole); ImGui::SameLine();
 			ImGui::InputFloat("Mass factor", &sw.Spawn.blackHoleMassProportion, 0.02, 0.1, 4);
-			ImGui::Combo("Angular momentum", (int*) &(sw.Spawn.angularMomentum), "None\0Inverse Magnitude\0Inverse magnitude squared\0Magnitude\0Magnitude Squared\0Uniform\0Gaussian");
-			static bool recip = true;
-			ImGui::Checkbox("Reciprocal", &recip); ImGui::SameLine();
-			float amc = recip? 1.0f/sw.Spawn.initialAngularMomentumCoefficent:sw.Spawn.initialAngularMomentumCoefficent;
-			ImGui::DragFloat("Momentum factor", &(amc), recip? 1.0f:0.001f);
-			sw.Spawn.initialAngularMomentumCoefficent = recip ? 1.0f/amc:amc;
+			ImGui::Combo("Angular momentum", (int*) &(sw.Spawn.angularMomentum), "None\0Inverse Magnitude\0Inverse magnitude squared\0Magnitude\0Magnitude Squared\0Uniform\0Gaussian\0User defined V: R3 -> R3");
+			ImGui::Separator();
+			if (sw.Spawn.angularMomentum == AngularMomentum_Distr::USER_DEFINED) {
+				static bool goodX = true, goodY = true, goodZ = true;
+				static char X[1024] = "r*sin(theta)";
+				static char Y[1024] = "0";
+				static char Z[1024] = "-r*cos(theta)";
 
+				ImGui::InputText("V(x,y,z)[0]", X, 1024); statusText(goodX);
+				ImGui::InputText("V(x,y,z)[1]", Y, 1024); statusText(goodY);
+				ImGui::InputText("V(x,y,z)[2]", Z, 1024); statusText(goodZ);
+
+				if (ImGui::TreeNode("Supported symbols")) {
+					ImGui::Text("x     : First euclidean coordinate in right handed system.");
+					ImGui::Text("y     : Second euclidean coordinate in right handed system.");
+					ImGui::Text("z     : Third euclidean coordinate in right handed system.");
+					ImGui::Text("r     : L2-norm on (x,y,z).");
+					ImGui::Text("theta : Azimuth (rotation from x toward z).");
+					ImGui::Text("phi   : Altitude (rotation from xz plane).");
+					ImGui::TreePop();
+				}
+				
+			}
+			else {
+				static bool recip = true;
+				ImGui::Checkbox("", &recip); ImGui::SameLine();
+				float amc = recip ? 1.0f / sw.Spawn.initialAngularMomentumCoefficent : sw.Spawn.initialAngularMomentumCoefficent;
+				ImGui::DragFloat("Momentum factor", &(amc), recip ? 1.0f : 0.001f);
+				sw.Spawn.initialAngularMomentumCoefficent = recip ? 1.0f / amc : amc;
+			}
 		}
 
 
@@ -135,26 +191,26 @@ namespace GUI {
 		sw.enforceBounds();
 		ImGuiIO& io = ImGui::GetIO();
 		if (io.MouseReleased[0]) {
-			Signals.mouseReleased = true;
+			Mouse.mouseReleased = true;
 		}
 		if (io.MouseDown[0]) {
 			if (!ImGui::IsAnyWindowFocused()) {
-				Signals.dragX = io.MouseDelta.x;
-				Signals.dragY = io.MouseDelta.y;
-				Signals.mouseDown = true;
+				Mouse.dragX = io.MouseDelta.x;
+				Mouse.dragY = io.MouseDelta.y;
+				Mouse.mouseDown = true;
 			}
 			else {
-				Signals.dragX = 0;
-				Signals.dragY = 0;
-				Signals.mouseDown = false;
+				Mouse.dragX = 0;
+				Mouse.dragY = 0;
+				Mouse.mouseDown = false;
 			}
 		}
 
 		if (io.MouseWheel > 0) {
-			Signals.zoomIn = true;
+			Mouse.zoomIn = true;
 		}
 		else if (io.MouseWheel < 0) {
-			Signals.zoomOut = true;
+			Mouse.zoomOut = true;
 		}
 
 		ImGui::End();

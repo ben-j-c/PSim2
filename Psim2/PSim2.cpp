@@ -97,9 +97,9 @@ int main() {
 			glClear(GL_COLOR_BUFFER_BIT);
 			
 
-			if (GUI::Signals.mouseDown) {
-				sw.Camera.azimuth += GUI::Signals.dragX / 5.0f;
-				sw.Camera.altitude += GUI::Signals.dragY / 5.0f;
+			if (GUI::Mouse.mouseDown) {
+				sw.Camera.azimuth += GUI::Mouse.dragX / 5.0f;
+				sw.Camera.altitude += GUI::Mouse.dragY / 5.0f;
 				sw.Camera.altitude = fminf(89.0f, fmaxf(-89.0f, sw.Camera.altitude));
 
 				sw.Camera.azimuth = fmodf(sw.Camera.azimuth, 360);
@@ -111,10 +111,10 @@ int main() {
 				}
 			}
 
-			if (GUI::Signals.zoomIn) {
+			if (GUI::Mouse.zoomIn) {
 				sw.Camera.radius /= 1.1f;
 			}
-			if (GUI::Signals.zoomOut) {
+			if (GUI::Mouse.zoomOut) {
 				sw.Camera.radius *= 1.1f;
 			}
 
@@ -156,7 +156,8 @@ int main() {
 
 
 
-			GUI::Signals = { false, false, false, false, false, false, 0, 0, false, false };
+			GUI::Signals = { false, false, false, false };
+			GUI::Mouse = { false, false, 0, 0, false, false };
 
 			GUI::draw();
 
