@@ -37,7 +37,7 @@ static void poseCamera() {
 		0.0f
 	};
 	//Graphics::setCamera2D(ratio, 10, { 0,0,0,0 });
-	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 10000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
+	Graphics::setCamera(sw.Camera.fov, ratio, 0.1f, 100000.0f, camPos, { 0,0,0,0 }, { 0,1,0,0 });
 }
 
 int main() {

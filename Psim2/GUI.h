@@ -69,7 +69,7 @@ namespace GUI {
 			float u) {
 				symbol_table.get_variable("x")->ref() = x;
 				symbol_table.get_variable("y")->ref() = y;
-				symbol_table.get_variable("z")->ref() = x;
+				symbol_table.get_variable("z")->ref() = z;
 				symbol_table.get_variable("r")->ref() = r;
 				symbol_table.get_variable("theta")->ref() = theta;
 				symbol_table.get_variable("phi")->ref() = phi;
@@ -92,7 +92,7 @@ namespace GUI {
 			float u) {
 				symbol_table.get_variable("x")->ref() = x;
 				symbol_table.get_variable("y")->ref() = y;
-				symbol_table.get_variable("z")->ref() = x;
+				symbol_table.get_variable("z")->ref() = z;
 				symbol_table.get_variable("r")->ref() = r;
 				symbol_table.get_variable("theta")->ref() = theta;
 				symbol_table.get_variable("phi")->ref() = phi;
@@ -144,6 +144,42 @@ namespace GUI {
 		}
 	}
 
+	void inputVelocityEquations() {
+		SettingsWrapper& sw = SettingsWrapper::get();
+		static bool first = true;
+		static bool goodX = true, goodY = true, goodZ = true;
+		static char X[1024] = "r*sin(theta)/15";
+		static char Y[1024] = "0";
+		static char Z[1024] = "-r*cos(theta)/15";
+
+		if (ImGui::InputText("V(x,y,z)[0]", X, 1024) || first)
+			goodX = parser.compile(X, expression_velox);
+		statusText(goodX);
+		if (ImGui::InputText("V(x,y,z)[1]", Y, 1024) || first)
+			goodY = parser.compile(Y, expression_veloy);
+		statusText(goodY);
+		if (ImGui::InputText("V(x,y,z)[2]", Z, 1024) || first)
+			goodZ = parser.compile(Z, expression_veloz);
+		statusText(goodZ);
+
+		sw.Spawn.VelocityFunc_good = goodX && goodY && goodZ;
+
+		supportedSymbols();
+		first = false;
+	}
+
+	void inputPDFEquation() {
+		static bool first = false;
+		SettingsWrapper& sw = SettingsWrapper::get();
+		static char pdf[1024] = "x^2 + y^2 + z^2 < 100? 1:0";
+
+		if (ImGui::InputText("P(x,y,z)", pdf, 1024) || first) {
+			sw.Spawn.SpawnFunc_good = parser.compile(pdf, expression_pdf);
+		}
+
+		statusText(sw.Spawn.SpawnFunc_good);
+	}
+
 	void draw() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -151,6 +187,7 @@ namespace GUI {
 
 
 		static bool transparency = false;
+		static bool recip = true;
 		static float alpha = 1.0f;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, transparency ? alpha : 1.0f);
@@ -202,11 +239,8 @@ namespace GUI {
 			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring\0User defined P: R3 -> R");
 			ImGui::Separator();
 			if (sw.Spawn.spawn_distr == Spawn_Distr::USER_DEFINED) {
-				static char pdf[1024] = "x^2 + y^2 + z^2 < 100? 1:0";
-
-				ImGui::InputText("P(x,y,z)", pdf, 1024);
-				sw.Spawn.SpawnFunc_good = parser.compile(pdf, expression_pdf);
-				statusText(sw.Spawn.SpawnFunc_good);
+				
+				inputPDFEquation();
 
 				supportedSymbols();
 			}
@@ -222,34 +256,22 @@ namespace GUI {
 			ImGui::Combo("Angular momentum", (int*) &(sw.Spawn.angularMomentum), "None\0Inverse Magnitude\0Inverse magnitude squared\0Magnitude\0Magnitude Squared\0Uniform\0Gaussian\0User defined V: R3 -> R3");
 			ImGui::Separator();
 			if (sw.Spawn.angularMomentum == AngularMomentum_Distr::USER_DEFINED) {
-				static bool goodX = true, goodY = true, goodZ = true;
-				static char X[1024] = "r*sin(theta)/15";
-				static char Y[1024] = "0";
-				static char Z[1024] = "-r*cos(theta)/15";
-
-				if (ImGui::InputText("V(x,y,z)[0]", X, 1024))
-					goodX = parser.compile(X, expression_velox);
-				statusText(goodX);
-				if (ImGui::InputText("V(x,y,z)[1]", Y, 1024))
-					goodY = parser.compile(Y, expression_veloy);
-				statusText(goodY);
-				if (ImGui::InputText("V(x,y,z)[2]", Z, 1024))
-					goodZ = parser.compile(Z, expression_veloz);
-				statusText(goodZ);
-
-				sw.Spawn.VelocityFunc_good = goodX && goodY && goodZ;
-
-				supportedSymbols();
+				inputVelocityEquations();
 			}
 			else {
-				static bool recip = true;
-				ImGui::Checkbox("", &recip); ImGui::SameLine();
+				
+				ImGui::Checkbox("", &recip);
+				if (ImGui::IsItemClicked())
+					recip = !recip;
+
+				ImGui::SameLine();
 				float amc = recip ? 1.0f / sw.Spawn.initialAngularMomentumCoefficent : sw.Spawn.initialAngularMomentumCoefficent;
 				ImGui::DragFloat("Momentum factor", &(amc), recip ? 1.0f : 0.001f);
 				sw.Spawn.initialAngularMomentumCoefficent = recip ? 1.0f / amc : amc;
 			}
-		}
 
+			ImGui::Separator();
+		}
 
 		if (ImGui::CollapsingHeader("Camera parameters")) {
 			ImGui::SliderFloat("Azimuth", &(sw.Camera.azimuth), -180, 180, "%.1f degrees");

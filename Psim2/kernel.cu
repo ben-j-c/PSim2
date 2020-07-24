@@ -228,8 +228,8 @@ int DeviceFunctions::setup(int num) {
 				pos.y,
 				pos.z,
 				mag,
-				atan2f(pos.x, pos.z), //Azimuth
-				atan2f(pos.x*pos.x + pos.z*pos.z,pos.y), //Altitude
+				atan2f(pos.z, pos.x), //Azimuth
+				atan2f(pos.y, pos.x*pos.x + pos.z*pos.z), //Altitude
 				randFloat()
 				));
 			break;
