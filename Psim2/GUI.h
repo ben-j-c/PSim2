@@ -3,10 +3,10 @@
 #include "../IMGUI/imgui_impl_glfw.h"
 #include "../IMGUI/imgui_impl_opengl3.h"
 #include "SettingsWrapper.h"
+#include "exprtk.hpp"
 
 #include <chrono>
 #include <numeric>
-#include <optional>
 
 
 namespace GUI {
@@ -26,7 +26,15 @@ namespace GUI {
 		bool zoomIn;
 	} Mouse;
 
-
+	static exprtk::symbol_table<float> symbol_table;
+	static exprtk::expression<float> expression_pdf;
+	static exprtk::expression<float> expression_velox;
+	static exprtk::expression<float> expression_veloy;
+	static exprtk::expression<float> expression_veloz;
+	static exprtk::parser<float> parser;
+	static struct {
+		float x, y, z, r, theta, phi, u;
+	} xpr;
 
 	void initialize(GLFWwindow* window) {
 		const char* glsl_version = "#version 460";
@@ -36,6 +44,62 @@ namespace GUI {
 		ImGui::StyleColorsDark();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
+		symbol_table.add_constants();
+		symbol_table.add_variable("x", xpr.x);
+		symbol_table.add_variable("y", xpr.y);
+		symbol_table.add_variable("z", xpr.z);
+		symbol_table.add_variable("r", xpr.r);
+		symbol_table.add_variable("theta", xpr.theta);
+		symbol_table.add_variable("phi", xpr.phi);
+		symbol_table.add_variable("u", xpr.u);
+
+		expression_pdf.register_symbol_table(symbol_table);
+		expression_velox.register_symbol_table(symbol_table);
+		expression_veloy.register_symbol_table(symbol_table);
+		expression_veloz.register_symbol_table(symbol_table);
+
+		SettingsWrapper& sw = SettingsWrapper::get();
+		sw.Spawn.VelocityFunc = [&](
+			float x,
+			float y,
+			float z,
+			float r,
+			float theta,
+			float phi,
+			float u) {
+				symbol_table.get_variable("x")->ref() = x;
+				symbol_table.get_variable("y")->ref() = y;
+				symbol_table.get_variable("z")->ref() = x;
+				symbol_table.get_variable("r")->ref() = r;
+				symbol_table.get_variable("theta")->ref() = theta;
+				symbol_table.get_variable("phi")->ref() = phi;
+				symbol_table.get_variable("u")->ref() = u;
+
+				return std::array<float, 3>{
+					expression_velox.value(),
+					expression_veloy.value(),
+					expression_veloz.value(),
+				};
+		};
+
+		sw.Spawn.SpawnFunc = [&](
+			float x,
+			float y,
+			float z,
+			float r,
+			float theta,
+			float phi,
+			float u) {
+				symbol_table.get_variable("x")->ref() = x;
+				symbol_table.get_variable("y")->ref() = y;
+				symbol_table.get_variable("z")->ref() = x;
+				symbol_table.get_variable("r")->ref() = r;
+				symbol_table.get_variable("theta")->ref() = theta;
+				symbol_table.get_variable("phi")->ref() = phi;
+				symbol_table.get_variable("u")->ref() = u;
+
+				return expression_pdf.value();
+		};
 	}
 
 	static void statusText(bool status) {
@@ -48,7 +112,7 @@ namespace GUI {
 		}
 	}
 
-	static void fpsText(){
+	static void fpsText() {
 		static std::array<float, 100> frameTimes;
 		static int insertIndex = 0;
 
@@ -67,6 +131,19 @@ namespace GUI {
 		ImGui::Text("%.0f FPS", 1.0f / avgFrameTime);
 	}
 
+	void supportedSymbols() {
+		if (ImGui::TreeNode("Supported symbols")) {
+			ImGui::Text("x     : First euclidean coordinate in right handed system.");
+			ImGui::Text("y     : Second euclidean coordinate in right handed system.");
+			ImGui::Text("z     : Third euclidean coordinate in right handed system.");
+			ImGui::Text("r     : L2-norm on (x,y,z).");
+			ImGui::Text("theta : Azimuth (rotation from x toward z in radians).");
+			ImGui::Text("phi   : Altitude (rotation from xz plane in radians).");
+			ImGui::Text("u     : u~U(0,1).");
+			ImGui::TreePop();
+		}
+	}
+
 	void draw() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -75,8 +152,8 @@ namespace GUI {
 
 		static bool transparency = false;
 		static float alpha = 1.0f;
-		
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, transparency ? alpha:1.0f);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, transparency ? alpha : 1.0f);
 		ImGui::Begin("Settings");
 
 		ImGui::Text("Window settings");
@@ -113,10 +190,10 @@ namespace GUI {
 		if (ImGui::IsItemClicked()) {
 			Signals.pause = true;
 		}
-		
+
 
 		if (ImGui::CollapsingHeader("Simulation factors")) {
-			ImGui::InputFloat("Gravitational constant", &sw.SimulationFactors.gravConstant,0.0f, 0.0f, "%.5e");
+			ImGui::InputFloat("Gravitational constant", &sw.SimulationFactors.gravConstant, 0.0f, 0.0f, "%.5e");
 			ImGui::InputFloat("Time step", &sw.SimulationFactors.timeStep, 0.0f, 0.0f, "%.5e");
 		}
 
@@ -125,19 +202,13 @@ namespace GUI {
 			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring\0User defined P: R3 -> R");
 			ImGui::Separator();
 			if (sw.Spawn.spawn_distr == Spawn_Distr::USER_DEFINED) {
-				static bool good = true;
 				static char pdf[1024] = "x^2 + y^2 + z^2 < 100? 1:0";
-				ImGui::InputText("P(x,y,z)", pdf, 1024); statusText(good);
 
-				if (ImGui::TreeNode("Supported symbols")) {
-					ImGui::Text("x     : First euclidean coordinate in right handed system.");
-					ImGui::Text("y     : Second euclidean coordinate in right handed system.");
-					ImGui::Text("z     : Third euclidean coordinate in right handed system.");
-					ImGui::Text("r     : L2-norm on (x,y,z).");
-					ImGui::Text("theta : Azimuth (rotation from x toward z).");
-					ImGui::Text("phi   : Altitude (rotation from xz plane).");
-					ImGui::TreePop();
-				}
+				ImGui::InputText("P(x,y,z)", pdf, 1024);
+				sw.Spawn.SpawnFunc_good = parser.compile(pdf, expression_pdf);
+				statusText(sw.Spawn.SpawnFunc_good);
+
+				supportedSymbols();
 			}
 			else {
 				ImGui::InputFloat2("Parameters X", sw.Spawn.paramX.data(), 4);
@@ -152,24 +223,23 @@ namespace GUI {
 			ImGui::Separator();
 			if (sw.Spawn.angularMomentum == AngularMomentum_Distr::USER_DEFINED) {
 				static bool goodX = true, goodY = true, goodZ = true;
-				static char X[1024] = "r*sin(theta)";
+				static char X[1024] = "r*sin(theta)/15";
 				static char Y[1024] = "0";
-				static char Z[1024] = "-r*cos(theta)";
+				static char Z[1024] = "-r*cos(theta)/15";
 
-				ImGui::InputText("V(x,y,z)[0]", X, 1024); statusText(goodX);
-				ImGui::InputText("V(x,y,z)[1]", Y, 1024); statusText(goodY);
-				ImGui::InputText("V(x,y,z)[2]", Z, 1024); statusText(goodZ);
+				if (ImGui::InputText("V(x,y,z)[0]", X, 1024))
+					goodX = parser.compile(X, expression_velox);
+				statusText(goodX);
+				if (ImGui::InputText("V(x,y,z)[1]", Y, 1024))
+					goodY = parser.compile(Y, expression_veloy);
+				statusText(goodY);
+				if (ImGui::InputText("V(x,y,z)[2]", Z, 1024))
+					goodZ = parser.compile(Z, expression_veloz);
+				statusText(goodZ);
 
-				if (ImGui::TreeNode("Supported symbols")) {
-					ImGui::Text("x     : First euclidean coordinate in right handed system.");
-					ImGui::Text("y     : Second euclidean coordinate in right handed system.");
-					ImGui::Text("z     : Third euclidean coordinate in right handed system.");
-					ImGui::Text("r     : L2-norm on (x,y,z).");
-					ImGui::Text("theta : Azimuth (rotation from x toward z).");
-					ImGui::Text("phi   : Altitude (rotation from xz plane).");
-					ImGui::TreePop();
-				}
-				
+				sw.Spawn.VelocityFunc_good = goodX && goodY && goodZ;
+
+				supportedSymbols();
 			}
 			else {
 				static bool recip = true;

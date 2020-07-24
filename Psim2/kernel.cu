@@ -195,7 +195,8 @@ int DeviceFunctions::setup(int num) {
 
 	for (int i = 0; i < numpart; i++) {
 		float mag = magVector3(&plist[i].pos);
-		Vector3 ortho = { -plist[i].pos.z, 0.0, plist[i].pos.x };
+		Vector3 &pos = plist[i].pos;
+		Vector3 ortho = { -pos.z, 0.0, pos.x };
 		normVector3(&ortho);
 		float scale;
 		switch (sw.Spawn.angularMomentum) {
@@ -219,6 +220,18 @@ int DeviceFunctions::setup(int num) {
 			break;
 		case AngularMomentum_Distr::GAUSS:
 			scale = 0;
+			break;
+		case AngularMomentum_Distr::USER_DEFINED:
+			scale = 1;
+			copyVector3(&ortho, sw.Spawn.VelocityFunc(
+				pos.x,
+				pos.y,
+				pos.z,
+				mag,
+				atan2f(pos.x, pos.z), //Azimuth
+				atan2f(pos.x*pos.x + pos.z*pos.z,pos.y), //Altitude
+				randFloat()
+				));
 			break;
 		default:
 			scale = 0;

@@ -2,7 +2,6 @@
 #include <memory>
 #include <array>
 #include <functional>
-#include <optional>
 
 
 namespace Spawn_Distr{
@@ -55,11 +54,11 @@ public:
 		bool blackHole = false;
 		float blackHoleMassProportion = 0.25f;
 		
-		//CUDA 10.2 does not support unique
+		//CUDA 10.2 does not support std::optional
 		bool SpawnFunc_good = false;
 		bool VelocityFunc_good = false;
 		std::function<float(float, float, float, float, float, float, float)> SpawnFunc;
-		std::function<float(float, float, float, float, float, float, float)> VelocityFunc;
+		std::function<std::array<float, 3>(float, float, float, float, float, float, float)> VelocityFunc;
 	} Spawn;
 
 	struct {
