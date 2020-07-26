@@ -164,6 +164,9 @@ namespace GUI {
 
 		sw.Spawn.VelocityFunc_good = goodX && goodY && goodZ;
 
+		ImGui::InputInt("# samples/particle", &sw.Spawn.SpawnFunc_Samples);
+		ImGui::DragFloat("Proposal func. std. dev.", &sw.Spawn.SpawnFunc_SigmaQ, 1.0f, 0.0f, 0.0f, "%.3f", 1.1f);
+
 		supportedSymbols();
 		first = false;
 	}

@@ -55,9 +55,12 @@ public:
 		float blackHoleMassProportion = 0.25f;
 		
 		//CUDA 10.2 does not support std::optional
+		int SpawnFunc_Samples = 10;
+		float SpawnFunc_SigmaQ = 1.0f;
 		bool SpawnFunc_good = false;
-		bool VelocityFunc_good = false;
 		std::function<float(float, float, float, float, float, float, float)> SpawnFunc;
+
+		bool VelocityFunc_good = false;
 		std::function<std::array<float, 3>(float, float, float, float, float, float, float)> VelocityFunc;
 	} Spawn;
 
@@ -79,6 +82,8 @@ public:
 
 		clamp(Spawn.N, 0ui64, SIZE_MAX);
 		clamp(Spawn.blackHoleMassProportion, 0.0f, INFINITY);
+		clamp(Spawn.SpawnFunc_Samples, 0, INT_MAX);
+		clamp(Spawn.SpawnFunc_SigmaQ, 0.01f, INFINITY);
 		clamp(SimulationFactors.gravConstant, 0.0f, INFINITY);
 		clamp(SimulationFactors.timeStep, 0.0f, INFINITY);
 	}

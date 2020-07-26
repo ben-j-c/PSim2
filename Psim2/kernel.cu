@@ -1,6 +1,8 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include "math_functions.h"
+#include "math_constants.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -172,26 +174,76 @@ static float randRange(std::array<float, 2> ab) {
 	return ((float)rand() / RAND_MAX)*(ab[1] - ab[0]) + ab[0];
 }
 
-int DeviceFunctions::setup(int num) {
-	numpart = ((num - 1) / (blockSize*blocksToLoad) + 1)*blockSize*blocksToLoad;
-	static bool firstRun = true;
-	if(firstRun)
-		cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync));
-	printf("Startup...\n");
-	printf("Given %d particles, rounding to %d - the nearest multiple of blocksize*blocksToLoad (%d * %d)\n", num, numpart, blockSize, blocksToLoad);
-	printf("sizeof(Particle) = %d\n", sizeof(Particle));
-	plist = (Particle*)malloc(sizeof(Particle)*numpart);
-	host_pos = (Vector3*)malloc(sizeof(Vector3)*numpart);
+static float randGauss() {
 
+	float z1, z2, r2;
+	do {
+		z1 = randRange(-1, 1);
+		z2 = randRange(-1, 1);
+		r2 = z1*z1 + z2*z2;
+	} while (r2 > 1);
 
+	return z1*sqrtf(-2.0f*logf(abs(z1))/r2);
+}
+
+static std::array<float,2> randGauss2() {
+
+	float z1, z2, r2;
+	do {
+		z1 = randRange(-1, 1);
+		z2 = randRange(-1, 1);
+		r2 = z1 * z1 + z2 * z2;
+	} while (r2 < 1);
+
+	return { z1 * sqrtf(-2.0f*logf(abs(z1)) / r2), z2*sqrtf(-2.0f*logf(abs(z2))/r2) };
+}
+
+void spawnParticles() {
 	SettingsWrapper &sw = SettingsWrapper::get();
+	const int sd = sw.Spawn.spawn_distr;
 	for (int i = 0; i < numpart; i++) {
 		plist[i].pos = { randRange(sw.Spawn.paramX),randRange(sw.Spawn.paramY),randRange(sw.Spawn.paramZ) };
-		//plist[i].pos = { randRange(-10,10),randRange(-1,1),randRange(-5,5) };
+		
+
+		switch (sd) {
+		case Spawn_Distr::GAUSS: {
+
+
+			float x = randGauss()*sw.Spawn.paramX[1] + sw.Spawn.paramX[0];
+			float y = randGauss()*sw.Spawn.paramY[1] + sw.Spawn.paramY[0];
+			float z = randGauss()*sw.Spawn.paramZ[1] + sw.Spawn.paramZ[0];
+			plist[i].pos = { x, y, z };
+			break;
+		}
+		case Spawn_Distr::RING: {
+			float theta1 = randRange(0, 2 * CUDART_PI);
+			float r2 = randFloat()*sw.Spawn.paramY[1];
+			float theta2 = randRange(0, 2 * CUDART_PI);
+			float x = sw.Spawn.paramX[1] * cosf(theta1) + r2 * cosf(theta2)*cosf(theta1);
+			float z = sw.Spawn.paramZ[1] * sinf(theta1) + r2 * cosf(theta2)*sinf(theta1);
+			float y = r2 * sinf(theta2);
+			plist[i].pos = { x, y, z };
+			break;
+		}
+		case Spawn_Distr::UNIFORM: {
+			plist[i].pos = { randRange(sw.Spawn.paramX),randRange(sw.Spawn.paramY),randRange(sw.Spawn.paramZ) };
+			break;
+		}
+		case Spawn_Distr::USER_DEFINED:
+
+		default:
+			plist[i].pos = { randRange(-5,5),randRange(-5,5),randRange(-5, 5) };
+			break;
+		}
+
 		plist[i].v = { 0.0, 0.0, 0.0 };
 		plist[i].m = randFloat() / numpart;
 		plist[i].isStationary = 0;
 	}
+}
+
+void initializeVelocity() {
+	SettingsWrapper &sw = SettingsWrapper::get();
 
 	for (int i = 0; i < numpart; i++) {
 		float mag = magVector3(&plist[i].pos);
@@ -204,16 +256,16 @@ int DeviceFunctions::setup(int num) {
 			scale = 0;
 			break;
 		case AngularMomentum_Distr::MAG_SQ:
-			scale = mag*mag;
+			scale = mag * mag;
 			break;
 		case AngularMomentum_Distr::MAG:
 			scale = mag;
 			break;
 		case AngularMomentum_Distr::INV_MAG_SQ:
-			scale = 1.0f/(mag*mag);
+			scale = 1.0f / (mag*mag);
 			break;
 		case AngularMomentum_Distr::INV_MAG:
-			scale = 1.0f/mag;
+			scale = 1.0f / mag;
 			break;
 		case AngularMomentum_Distr::UNIFORM:
 			scale = randFloat();
@@ -231,7 +283,7 @@ int DeviceFunctions::setup(int num) {
 				atan2f(pos.z, pos.x), //Azimuth
 				atan2f(pos.y, pos.x*pos.x + pos.z*pos.z), //Altitude
 				randFloat()
-				));
+			));
 			break;
 		default:
 			scale = 0;
@@ -241,6 +293,21 @@ int DeviceFunctions::setup(int num) {
 		scaleVector3(&ortho, scale*sw.Spawn.initialAngularMomentumCoefficent);
 		copyVector3(&plist[i].v, &ortho);
 	}
+}
+
+int DeviceFunctions::setup(int num) {
+	numpart = ((num - 1) / (blockSize*blocksToLoad) + 1)*blockSize*blocksToLoad;
+	static bool firstRun = true;
+	if(firstRun)
+		cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync));
+	printf("Startup...\n");
+	printf("Given %d particles, rounding to %d - the nearest multiple of blocksize*blocksToLoad (%d * %d)\n", num, numpart, blockSize, blocksToLoad);
+	printf("sizeof(Particle) = %d\n", sizeof(Particle));
+	plist = (Particle*)malloc(sizeof(Particle)*numpart);
+	host_pos = (Vector3*)malloc(sizeof(Vector3)*numpart);
+
+	spawnParticles();
+	initializeVelocity();
 
 	cudaErrorCheck(cudaMalloc(&device_plist, sizeof(Particle)*numpart));
 	cudaErrorCheck(cudaMemcpy(device_plist, plist, sizeof(Particle)*numpart, cudaMemcpyHostToDevice));
