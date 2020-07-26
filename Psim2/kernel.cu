@@ -175,27 +175,17 @@ static float randRange(std::array<float, 2> ab) {
 }
 
 static float randGauss() {
-
-	float z1, z2, r2;
-	do {
-		z1 = randRange(-1, 1);
-		z2 = randRange(-1, 1);
-		r2 = z1*z1 + z2*z2;
-	} while (r2 > 1);
-
-	return z1*sqrtf(-2.0f*logf(abs(z1))/r2);
+	float u1 = randFloat(), u2 = randFloat();
+	return sqrtf(-2*logf(u1))*cosf(2*CUDART_PI*u2);
 }
 
 static std::array<float,2> randGauss2() {
 
-	float z1, z2, r2;
-	do {
-		z1 = randRange(-1, 1);
-		z2 = randRange(-1, 1);
-		r2 = z1 * z1 + z2 * z2;
-	} while (r2 < 1);
-
-	return { z1 * sqrtf(-2.0f*logf(abs(z1)) / r2), z2*sqrtf(-2.0f*logf(abs(z2))/r2) };
+	float u1 = randFloat(), u2 = randFloat();
+	return {
+		sqrtf(-2*logf(u1))*cosf(2*CUDART_PI*u2),
+		sqrtf(-2*logf(u1))*sinf(2*CUDART_PI*u2)
+	};
 }
 
 void spawnParticles() {
@@ -207,8 +197,6 @@ void spawnParticles() {
 
 		switch (sd) {
 		case Spawn_Distr::GAUSS: {
-
-
 			float x = randGauss()*sw.Spawn.paramX[1] + sw.Spawn.paramX[0];
 			float y = randGauss()*sw.Spawn.paramY[1] + sw.Spawn.paramY[0];
 			float z = randGauss()*sw.Spawn.paramZ[1] + sw.Spawn.paramZ[0];
@@ -229,8 +217,9 @@ void spawnParticles() {
 			plist[i].pos = { randRange(sw.Spawn.paramX),randRange(sw.Spawn.paramY),randRange(sw.Spawn.paramZ) };
 			break;
 		}
-		case Spawn_Distr::USER_DEFINED:
+		case Spawn_Distr::USER_DEFINED: {
 
+		}
 		default:
 			plist[i].pos = { randRange(-5,5),randRange(-5,5),randRange(-5, 5) };
 			break;
