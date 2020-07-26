@@ -160,8 +160,6 @@ void DeviceFunctions::doStep(float timestep, Vector3 *pos, Vector3 *colour) {
 	cudaErrorCheck(cudaGetLastError());
 }
 
-
-
 static float randFloat() {
 	return (float)rand() / RAND_MAX;
 }
@@ -186,6 +184,38 @@ static std::array<float,2> randGauss2() {
 		sqrtf(-2*logf(u1))*cosf(2*CUDART_PI*u2),
 		sqrtf(-2*logf(u1))*sinf(2*CUDART_PI*u2)
 	};
+}
+
+float magnitude(const std::array<float, 3>& a) {
+	return sqrtf(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+}
+
+void sampleFromSpawn(std::array<float,3>& z_prev, float& p_prev) {
+	SettingsWrapper &sw = SettingsWrapper::get();
+	const int samples = sw.Spawn.SpawnFunc_Samples;
+	const float sigma = sw.Spawn.SpawnFunc_SigmaQ;
+	for (int i = 0; i < samples;) {
+		float p_prop;
+		std::array<float, 3> z_prop;
+		do {
+			z_prop = {
+				sigma*randGauss() + z_prev[0],
+				sigma*randGauss() + z_prev[1],
+				sigma*randGauss() + z_prev[2] };
+			float p_prop = sw.Spawn.SpawnFunc(
+				z_prop[0],
+				z_prop[1],
+				z_prop[2],
+				magnitude(z_prop),
+				atan2f(z_prop[2], z_prop[0]), //Azimuth
+				atan2f(z_prop[1], z_prop[0]*z_prop[0] + z_prop[2]*z_prop[2]), //Altitude
+				randFloat());
+			i++;
+		} while (p_prop < p_prev && p_prop / p_prev > randFloat());
+
+		p_prev = p_prop;
+		z_prev = z_prop;
+	}
 }
 
 void spawnParticles() {
