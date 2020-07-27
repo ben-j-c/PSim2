@@ -82,7 +82,7 @@ public:
 
 		clamp(Spawn.N, 0ui64, SIZE_MAX);
 		clamp(Spawn.blackHoleMassProportion, 0.0f, INFINITY);
-		clamp(Spawn.SpawnFunc_Samples, 0, INT_MAX);
+		clamp(Spawn.SpawnFunc_Samples, 1, INT_MAX);
 		clamp(Spawn.SpawnFunc_SigmaQ, 0.01f, INFINITY);
 		clamp(SimulationFactors.gravConstant, 0.0f, INFINITY);
 		clamp(SimulationFactors.timeStep, 0.0f, INFINITY);

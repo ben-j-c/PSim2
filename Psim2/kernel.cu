@@ -161,7 +161,7 @@ void DeviceFunctions::doStep(float timestep, Vector3 *pos, Vector3 *colour) {
 }
 
 static float randFloat() {
-	return (float)rand() / RAND_MAX;
+	return (float)((double) rand() / (double)RAND_MAX);
 }
 
 static float randRange(float a, float b) {
@@ -194,15 +194,16 @@ void sampleFromSpawn(std::array<float,3>& z_prev, float& p_prev) {
 	SettingsWrapper &sw = SettingsWrapper::get();
 	const int samples = sw.Spawn.SpawnFunc_Samples;
 	const float sigma = sw.Spawn.SpawnFunc_SigmaQ;
-	for (int i = 0; i < samples;) {
+	for (int i = 0; i < samples; i++) {
 		float p_prop;
 		std::array<float, 3> z_prop;
+		float u;
 		do {
 			z_prop = {
 				sigma*randGauss() + z_prev[0],
 				sigma*randGauss() + z_prev[1],
 				sigma*randGauss() + z_prev[2] };
-			float p_prop = sw.Spawn.SpawnFunc(
+			p_prop = sw.Spawn.SpawnFunc(
 				z_prop[0],
 				z_prop[1],
 				z_prop[2],
@@ -210,10 +211,14 @@ void sampleFromSpawn(std::array<float,3>& z_prev, float& p_prev) {
 				atan2f(z_prop[2], z_prop[0]), //Azimuth
 				atan2f(z_prop[1], z_prop[0]*z_prop[0] + z_prop[2]*z_prop[2]), //Altitude
 				randFloat());
-			i++;
-		} while (p_prop < p_prev && p_prop / p_prev > randFloat());
+			u = randFloat();
+		} while (abs(p_prop) / p_prev <= u);
 
-		p_prev = p_prop;
+		if (p_prev > p_prop) {
+			printf("%f %f\n", p_prev, p_prop);
+		}
+
+		p_prev = abs(p_prop);
 		z_prev = z_prop;
 	}
 }
@@ -221,6 +226,21 @@ void sampleFromSpawn(std::array<float,3>& z_prev, float& p_prev) {
 void spawnParticles() {
 	SettingsWrapper &sw = SettingsWrapper::get();
 	const int sd = sw.Spawn.spawn_distr;
+
+	std::array<float, 3> z_cur{ 0,0,0 };
+	float p_cur;
+	if (sd == Spawn_Distr::USER_DEFINED) {
+		p_cur = sw.Spawn.SpawnFunc(
+			z_cur[0],
+			z_cur[1],
+			z_cur[2],
+			magnitude(z_cur),
+			atan2f(z_cur[2], z_cur[0]), //Azimuth
+			atan2f(z_cur[1], z_cur[0] * z_cur[0] + z_cur[2] * z_cur[2]), //Altitude
+			randFloat());
+	}
+
+
 	for (int i = 0; i < numpart; i++) {
 		plist[i].pos = { randRange(sw.Spawn.paramX),randRange(sw.Spawn.paramY),randRange(sw.Spawn.paramZ) };
 		
@@ -248,7 +268,9 @@ void spawnParticles() {
 			break;
 		}
 		case Spawn_Distr::USER_DEFINED: {
-
+			sampleFromSpawn(z_cur, p_cur);
+			copyVector3(&(plist[i].pos), z_cur);
+			break;
 		}
 		default:
 			plist[i].pos = { randRange(-5,5),randRange(-5,5),randRange(-5, 5) };
@@ -319,9 +341,10 @@ int DeviceFunctions::setup(int num) {
 	static bool firstRun = true;
 	if(firstRun)
 		cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync));
-	printf("Startup...\n");
-	printf("Given %d particles, rounding to %d - the nearest multiple of blocksize*blocksToLoad (%d * %d)\n", num, numpart, blockSize, blocksToLoad);
-	printf("sizeof(Particle) = %d\n", sizeof(Particle));
+	//printf("Startup...\n");
+	//printf("Given %d particles, rounding to %d - the nearest multiple of blocksize*blocksToLoad (%d * %d)\n", num, numpart, blockSize, blocksToLoad);
+	//printf("sizeof(Particle) = %d\n", sizeof(Particle));
+
 	plist = (Particle*)malloc(sizeof(Particle)*numpart);
 	host_pos = (Vector3*)malloc(sizeof(Vector3)*numpart);
 
@@ -330,12 +353,7 @@ int DeviceFunctions::setup(int num) {
 
 	cudaErrorCheck(cudaMalloc(&device_plist, sizeof(Particle)*numpart));
 	cudaErrorCheck(cudaMemcpy(device_plist, plist, sizeof(Particle)*numpart, cudaMemcpyHostToDevice));
-
-	dim3 blocks(numpart / blockSize, 1, 1);
-	dim3 threadsPerBlock(blockSize, 1, 1);
-
-	cudaErrorCheck(cudaGetLastError());
-
+	cudaErrorCheck(cudaDeviceSynchronize());
 	firstRun = false;
 	return numpart;
 }
@@ -345,7 +363,7 @@ int DeviceFunctions::shutdown() {
 	// cudaDeviceReset must be called before exiting in order for profiling and
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
 	
-	//cudaErrorCheck(cudaFree(device_plist));
+	cudaErrorCheck(cudaFree(device_plist));
 	device_plist = nullptr;
 	free(plist);
 	free(host_pos);

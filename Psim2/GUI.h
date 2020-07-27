@@ -164,15 +164,12 @@ namespace GUI {
 
 		sw.Spawn.VelocityFunc_good = goodX && goodY && goodZ;
 
-		ImGui::InputInt("# samples/particle", &sw.Spawn.SpawnFunc_Samples);
-		ImGui::DragFloat("Proposal func. std. dev.", &sw.Spawn.SpawnFunc_SigmaQ, 1.0f, 0.0f, 0.0f, "%.3f", 1.1f);
-
 		supportedSymbols();
 		first = false;
 	}
 
 	void inputPDFEquation() {
-		static bool first = false;
+		static bool first = true;
 		SettingsWrapper& sw = SettingsWrapper::get();
 		static char pdf[1024] = "x^2 + y^2 + z^2 < 100? 1:0";
 
@@ -181,6 +178,12 @@ namespace GUI {
 		}
 
 		statusText(sw.Spawn.SpawnFunc_good);
+
+		ImGui::InputInt("# samples/particle", &sw.Spawn.SpawnFunc_Samples);
+		ImGui::DragFloat("Proposal func. std. dev.", &sw.Spawn.SpawnFunc_SigmaQ, 1.0f, 0.0f, 0.0f, "%.3f", 1.1f);
+
+		supportedSymbols();
+		first = false;
 	}
 
 	void draw() {
@@ -242,10 +245,7 @@ namespace GUI {
 			ImGui::Combo("Spawn Distribution", (int*) &(sw.Spawn.spawn_distr), "Uniform\0Gaussian\0Ring\0User defined P: R3 -> R");
 			ImGui::Separator();
 			if (sw.Spawn.spawn_distr == Spawn_Distr::USER_DEFINED) {
-				
 				inputPDFEquation();
-
-				supportedSymbols();
 			}
 			else {
 				ImGui::InputFloat2("Parameters X", sw.Spawn.paramX.data(), 4);
