@@ -180,7 +180,7 @@ namespace GUI {
 		statusText(sw.Spawn.SpawnFunc_good);
 
 		ImGui::InputInt("# samples/particle", &sw.Spawn.SpawnFunc_Samples);
-		ImGui::DragFloat("Proposal func. std. dev.", &sw.Spawn.SpawnFunc_SigmaQ, 1.0f, 0.0f, 0.0f, "%.3f", 1.1f);
+		ImGui::DragFloat("Proposal func. std. dev.", &sw.Spawn.SpawnFunc_SigmaQ, 0.1f, 0.0f, 0.0f, "%.3f", 2.0f);
 
 		supportedSymbols();
 		first = false;
